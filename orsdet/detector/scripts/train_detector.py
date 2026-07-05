@@ -79,6 +79,7 @@ def main():
         default_run_dir_for_target_source,
         install_numba_fallback_if_needed,
         normalize_target_source,
+        set_yolo_params_checked,
         target_table_path,
         detector_target_dim,
     )
@@ -239,7 +240,12 @@ def main():
 
     target_table = (args.target_table or target_table_path(args.target_source)).resolve()
     run_dir_default = default_run_dir_for_target_source(args.target_source, args.slim_mode)
-    run_dir = next_run_dir(args.runs_root.resolve()) if args.new_run else (args.run_dir or run_dir_default).resolve()
+    if args.run_dir is not None:
+        run_dir = args.run_dir.resolve()
+    elif args.new_run:
+        run_dir = next_run_dir(args.runs_root.resolve())
+    else:
+        run_dir = run_dir_default.resolve()
     flux_refine_target_table = args.flux_refine_target_table.resolve() if args.flux_refine_target_table is not None else None
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "net_save").mkdir(exist_ok=True)
@@ -431,7 +437,8 @@ def main():
         parameters=cnn.set_sm_single(slope=0.5, fmax=1.5, fmin=-0.2),
     )
 
-    nb_yolo_filters = cnn.set_yolo_params(
+    nb_yolo_filters = set_yolo_params_checked(
+        cnn,
         nb_box=dg.nb_box,
         nb_class=dg.nb_class,
         nb_param=layout.nb_param,

@@ -36,6 +36,15 @@ def f_ar(values):
     return np.asarray(values, dtype="float32")
 
 
+def ensure_postprocess_metadata(run_dir: Path) -> None:
+    train_norm = run_dir / "train_norm.txt"
+    if train_norm.is_file():
+        return
+    train_cat_norm = run_dir / "train_cat_norm_lims.txt"
+    if train_cat_norm.is_file():
+        train_norm.write_text(train_cat_norm.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def checkpoint_epochs(run_dir: Path, epoch_start: int | None = None, epoch_end: int | None = None, epoch_interv: int = 1):
     epochs = []
     for path in (run_dir / "net_save").glob("net0_s*.dat"):
@@ -183,6 +192,7 @@ def write_roi_fwd_marker(path: Path, *, tile_indices: np.ndarray, dg, layout, ha
 def main():
     from orsdet_detector import DEFAULT_RUN_DIR, configure_paths, install_numba_fallback_if_needed
     from orsdet_detector import normalize_slim_mode, detector_layout, detector_target_dim
+    from orsdet_detector import set_yolo_params_checked
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("epoch", nargs="?", type=int)
@@ -282,6 +292,7 @@ def main():
     )
 
     dg.init_data_gen()
+    ensure_postprocess_metadata(run_dir)
     roi_tile_indices = None
     if args.training_roi_only:
         roi_mask = training_tile_mask(dg, halo_tiles=args.roi_halo_tiles)
@@ -319,7 +330,8 @@ def main():
         parameters=cnn.set_sm_single(slope=0.5, fmax=1.5, fmin=-0.2),
     )
 
-    cnn.set_yolo_params(
+    set_yolo_params_checked(
+        cnn,
         nb_box=dg.nb_box,
         nb_class=dg.nb_class,
         nb_param=layout.nb_param,

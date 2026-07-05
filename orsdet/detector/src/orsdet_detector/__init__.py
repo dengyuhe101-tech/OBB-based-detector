@@ -33,6 +33,7 @@ from .runtime import (
     default_run_dir_for_target_source,
     install_numba_fallback_if_needed,
     normalize_target_source,
+    set_yolo_params_checked,
     target_table_path,
 )
 
@@ -64,6 +65,7 @@ __all__ = [
     "normalize_flux_decode_mode",
     "normalize_slim_mode",
     "normalize_target_source",
+    "set_yolo_params_checked",
     "target_table_path",
     "detector_catalog_arrays",
     "detector_layout",

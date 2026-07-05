@@ -88,6 +88,37 @@ def set_cuda_device(device: int | None) -> None:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(device)
 
 
+def _prepend_path(path: Path) -> None:
+    text = str(path)
+    if text not in sys.path:
+        sys.path.insert(0, text)
+
+
+def _cianna_backend_dirs() -> list[Path]:
+    candidates = []
+    preferred = CIANNA_DIR / "build" / "lib.cianna4090-cuda" / "CIANNA.so"
+    if preferred.is_file():
+        candidates.append(preferred.parent)
+
+    build_libs = sorted(
+        CIANNA_DIR.glob("build/lib.*/CIANNA*.so"),
+        key=lambda path: path.stat().st_mtime,
+    )
+    candidates.extend(path.parent for path in build_libs)
+
+    source_libs = sorted(
+        CIANNA_DIR.glob("CIANNA*.so"),
+        key=lambda path: path.stat().st_mtime,
+    )
+    candidates.extend(path.parent for path in source_libs)
+
+    unique = []
+    for path in candidates:
+        if path not in unique:
+            unique.append(path)
+    return unique
+
+
 def configure_paths() -> None:
     for path in (
         EVAL_DIR / "src",
@@ -99,18 +130,10 @@ def configure_paths() -> None:
         ORSDET_DIR / "nms" / "src",
         ORSDET_DIR / "detector" / "src",
     ):
-        text = str(path)
-        if text not in sys.path:
-            sys.path.insert(0, text)
+        _prepend_path(path)
 
-    preferred = CIANNA_DIR / "build" / "lib.cianna4090-cuda" / "CIANNA.so"
-    if preferred.is_file():
-        sys.path.insert(0, str(preferred.parent))
-        return
-
-    build_libs = sorted((CIANNA_DIR / "build").glob("lib.*/CIANNA.so"), key=lambda p: p.stat().st_mtime)
-    if build_libs:
-        sys.path.insert(0, str(build_libs[-1].parent))
+    for path in _cianna_backend_dirs():
+        _prepend_path(path)
 
 
 def install_numba_fallback_if_needed() -> None:

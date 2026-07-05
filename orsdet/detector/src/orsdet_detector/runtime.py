@@ -48,6 +48,37 @@ def default_run_dir_for_target_source(source: str | None = None, slim_mode: str 
 DEFAULT_RUN_DIR = default_run_dir_for_target_source(DEFAULT_TARGET_SOURCE)
 
 
+def _prepend_path(path: Path) -> None:
+    text = str(path)
+    if text not in sys.path:
+        sys.path.insert(0, text)
+
+
+def _cianna_backend_dirs() -> list[Path]:
+    candidates = []
+    preferred = CIANNA_DIR / "build" / "lib.cianna4090-cuda" / "CIANNA.so"
+    if preferred.is_file():
+        candidates.append(preferred.parent)
+
+    build_libs = sorted(
+        CIANNA_DIR.glob("build/lib.*/CIANNA*.so"),
+        key=lambda path: path.stat().st_mtime,
+    )
+    candidates.extend(path.parent for path in build_libs)
+
+    source_libs = sorted(
+        CIANNA_DIR.glob("CIANNA*.so"),
+        key=lambda path: path.stat().st_mtime,
+    )
+    candidates.extend(path.parent for path in source_libs)
+
+    unique = []
+    for path in candidates:
+        if path not in unique:
+            unique.append(path)
+    return unique
+
+
 def configure_paths() -> None:
     for path in (
         DETECTOR_DIR / "src",
@@ -57,21 +88,35 @@ def configure_paths() -> None:
         GEOMETRY_DIR / "src",
         SKAO_DIR,
     ):
-        text = str(path)
-        if text not in sys.path:
-            sys.path.insert(0, text)
+        _prepend_path(path)
 
-    preferred = CIANNA_DIR / "build" / "lib.cianna4090-cuda" / "CIANNA.so"
-    if preferred.is_file():
-        sys.path.insert(0, str(preferred.parent))
-        return
+    for path in _cianna_backend_dirs():
+        _prepend_path(path)
 
-    build_libs = sorted(
-        (CIANNA_DIR / "build").glob("lib.*/CIANNA.so"),
-        key=lambda path: path.stat().st_mtime,
-    )
-    if build_libs:
-        sys.path.insert(0, str(build_libs[-1].parent))
+
+def set_yolo_params_checked(cnn, **kwargs):
+    try:
+        return cnn.set_yolo_params(**kwargs)
+    except (SystemError, TypeError) as exc:
+        messages = [str(exc)]
+        for attr in ("__cause__", "__context__"):
+            nested = getattr(exc, attr, None)
+            if nested is not None:
+                messages.append(str(nested))
+        if "nb_angle" not in "\n".join(messages):
+            raise
+
+        cianna_path = getattr(cnn, "__file__", "<unknown>")
+        raise RuntimeError(
+            "Loaded CIANNA backend does not support ORSDet angle outputs "
+            "(`nb_angle`).\n"
+            "CIANNA backend: %s\n"
+            "Build/install the bundled backend in ORSDet/src, for example:\n"
+            "  cd %s\n"
+            "  python -m pip install -e src --no-build-isolation\n"
+            "Then rerun `python test.py --gpu 0`."
+            % (cianna_path, ROOT_DIR)
+        ) from exc
 
 
 def install_numba_fallback_if_needed() -> None:

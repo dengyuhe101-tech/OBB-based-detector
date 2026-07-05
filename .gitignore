@@ -1,6 +1,7 @@
 # Python/build products
 __pycache__/
 *.py[cod]
+*.so
 .pytest_cache/
 *.egg-info/
 dist/
@@ -12,6 +13,7 @@ src/dist/
 outputs/
 orsdet/**/outputs/
 checkpoints/
+external_data/560Mhz-1kh
 external_data/560Mhz-1kh/
 
 # Large regenerated data/products
