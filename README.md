@@ -1,6 +1,6 @@
-# ORSDet
+# OBB-based detector
 
-ORSDet is the cleaned reproducibility code for the SKAO SDC1 oriented radio
+OBB-based detector is the cleaned reproducibility code for the SKAO SDC1 oriented radio
 source detector. The public entry points are intentionally small:
 
 ```bash
@@ -8,8 +8,8 @@ python train.py
 python test.py
 ```
 
-The ORSDet implementation is under `orsdet/`. The root `src/` directory keeps
-the CIANNA C/CUDA backend that ORSDet builds against. Historical experiment
+The OBB-based detector implementation is under `orsdet/`. The root `src/` directory keeps
+the CIANNA C/CUDA backend that OBB-based detector builds against. Historical experiment
 folders and release artifacts are not included in this repository layout.
 
 Large files are external by design except for the released best checkpoint:
@@ -107,14 +107,11 @@ Generated outputs are written under `outputs/` and are ignored by Git.
 
 ## License and Attribution
 
-ORSDet is distributed under the Apache License, Version 2.0. See `LICENSE.md`.
+OBB-based detector is distributed under the Apache License, Version 2.0. See `LICENSE.md`.
 Additional attribution notices are in `NOTICE.md`.
 
 This repository is based on the YOLO-CIANNA method by Cornu et al. and the
 CIANNA code by David Cornu. The original CIANNA project is available at
 https://github.com/Deyht/CIANNA and is released under the Apache-2.0 license.
 
-ORSDet adds the cleaned SDC1 oriented-source detection workflow, public
-train/test entry points, oriented-box target construction, detector integration,
-flux-head packaging, evaluation utilities, documentation, and released
-checkpoint.
+OBB-based detector adds the cleaned SDC1 oriented-source detection workflow, public train/test entry points, oriented-box target construction, detector integration, flux-head packaging, evaluation utilities, documentation, and released checkpoint.
